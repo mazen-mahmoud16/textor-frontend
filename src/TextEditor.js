@@ -11,7 +11,6 @@ import { useParams } from "react-router-dom"; // React DOM Version 5
 import { v4 as uuidV4 } from "uuid";
 
 export default function TextEditor() {
-
   /*
    * Using hooks
    */
@@ -20,11 +19,10 @@ export default function TextEditor() {
   const [no_of_users, setNoOfUsers] = useState();
   const { id: doc_id } = useParams();
 
-  
   useEffect(() => {
     // to resolve cors credentials problem (access-control-allow-origin)
     // Request to server of port 4000
-    const socket_io = io("https://text-editor12345.herokuapp.com/", {
+    const socket_io = io("http://localhost:4000", {
       transports: ["websocket", "polling", "flashsocket"],
     });
     setSocket(socket_io);
@@ -46,7 +44,7 @@ export default function TextEditor() {
       //Event listener when text changes, to send it to the server to update other clients and database
 
       quill.on("text-change", (updates, oldupdates, source) => {
-        // ***** Only track changes that the user made and discard the APIs changes
+        // * Only track changes that the user made and discard the APIs changes
         if (source !== "user") return;
 
         // Send data to the server
@@ -63,7 +61,7 @@ export default function TextEditor() {
   useEffect(() => {
     // To make sure that socket and quill are already created before entering this useeffect
     if (socket && quill) {
-      // To first request and load the document from the server and fill up the quill with the data came from server/DB
+      // To first lrequest and oad the document from the server and fill up the quill with the data came from server/DB
       socket.once("request_document", (document) => {
         quill.setContents(document);
         quill.enable();
@@ -79,7 +77,7 @@ export default function TextEditor() {
     if (socket && quill) {
       const interval = setInterval(() => {
         socket.emit("push-changes-db", quill.getContents());
-      }, 3000);
+      }, 500);
 
       return () => {
         clearInterval(interval);
@@ -87,24 +85,18 @@ export default function TextEditor() {
     }
   }, [socket, quill]);
 
-
   useEffect(() => {
-    if (socket && quill) {
-      const interval = setInterval(() => {
-        socket.emit("users", doc_id);
-      socket.on("no_users", (users) => {
-        setNoOfUsers(users)
-        document.getElementById('user').textContent=users
-      });
-      }, 3000);
+    // To make sure that socket and quill are already created before entering this use effect
+    if (socket) {
+      setInterval(() => {
+        socket.emit("check-users", doc_id);
 
-      return () => {
-        clearInterval(interval);
-      };
+        socket.on("no_users", (users) => {
+          document.getElementById("user").textContent = users;
+        });
+      }, 500);
     }
-  }, [socket,quill,no_of_users,doc_id]);
-
-
+  }, [no_of_users, socket]);
 
   // This function is used to prevent reloading the quill when page is refreshed and create the quill element
   const wrapper_handler = useCallback((wrapper) => {
@@ -133,16 +125,20 @@ export default function TextEditor() {
     win.focus();
   };
 
+  // Here we check if load document is pressed we open a new window with the entered document id
   const load_doc = () => {
     const text = document.getElementById("load_txt");
     if (text.value !== "") {
-      const error = document.querySelector('.error')
-      error.style.visibility="hidden"
-      const win = window.open(`/documents/${text.value}`);
+      setInterval(() => {
+        setNoOfUsers(3);
+      }, 1000);
+      const error = document.querySelector(".error");
+      error.style.visibility = "hidden";
+      const win = window.open(`/documents/${text.value}`, "_blank");
       win.focus();
     } else {
-      const error = document.querySelector('.error')
-      error.style.visibility="visible"
+      const error = document.querySelector(".error");
+      error.style.visibility = "visible";
     }
   };
 
@@ -162,8 +158,10 @@ export default function TextEditor() {
         <input id="load_txt" className="textbox" placeholder="Enter File ID" />
         <span className="error">Please enter a valid file ID</span>
       </div>
-      <span className="users">Number of active users on this document: </span>
-      <span id="user" className="users">loading...</span>
+      <span className="users">Number of active users: </span>
+      <span id="user" className="users">
+        loading...
+      </span>
       <div id="container" ref={wrapper_handler}></div>
     </div>
   );
