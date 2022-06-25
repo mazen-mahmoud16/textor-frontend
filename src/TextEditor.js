@@ -8,7 +8,7 @@ import "quill/dist/quill.snow.css";
 import React, { useEffect, useState, useCallback } from "react";
 import { useParams } from "react-router-dom"; // React DOM Version 5
 import { v4 as uuidV4 } from "uuid";
-import NetInfo from '@react-native-community/netinfo';
+
 
 function TextEditor() {
   /*
@@ -19,25 +19,6 @@ function TextEditor() {
   const [quill, setQuill] = useState();
   const [no_of_users] = useState();
 
-  const [isConnected, setIsConnected] = useState(false);
-
-  useEffect(() => {
-    const unsub = NetInfo.addEventListener(state => {
-      setIsConnected(state.isConnected);
-    });
-    
-    return () => unsub();
-  }, []);
-
-
-const quillStatus = async () => {
-quill.disable();
-  }
-  if(!isConnected){
-    quillStatus();
-  }else{
-    quill.enable();
-  }
   useEffect(() => {
     // to resolve cors credentials problem (access-control-allow-origin)
     // Request to server of port 4000
